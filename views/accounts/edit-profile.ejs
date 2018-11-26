@@ -1,0 +1,29 @@
+<%- layout('layout') -%>
+
+<div class="row">
+    <div class="col-lg-6 col-md-offset-3">
+
+        <% if ( message.length > 0) { %>
+            <div class="alert alert-success alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <%= message %>
+            </div>
+        <% } %>
+        <form action="" method="POST">
+            <h1>Edit Profile</h1>
+            <div class="form-group">
+                <label for="email">Name:</label>
+                 <input class="form-control" value="<%= user.profile.name %>" type="name" name="name">
+            </div>
+            <div class="form-group">
+                <label for="passowrd">Address:</label>
+                <input class="form-control" value="<%= user.address %>" type="address" name="address">
+            </div>
+            
+            <button type="submit" class="btn btn-success">Submit</button>
+            
+        </form>
+    </div>
+</div>

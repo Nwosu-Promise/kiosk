@@ -1,0 +1,106 @@
+var router =  require('express').Router();
+var User = require('../models/user.model');
+var Cart = require('../models/cart.model');
+var async =  require('async');
+var passport = require('passport');
+var passportConf = require('../config/passport');
+
+
+
+
+
+// login page and route
+router.get('/login', function(req, res) {
+    if (req.user) return res.redirect('/');
+    res.render('accounts/login', { message: req.flash('loginMessage')});
+});
+
+router.post('/login', passport.authenticate('local-login', {
+    successRedirect: '/profile',
+    failureRedirect: '/login',
+    failureFlash: true
+}));
+
+
+
+// profile page and route
+router.get('/profile',  function(req, res, next){
+    // res.json(req.user);
+    User.findOne({ _id: req.user._id }, function(err, user){
+        if (err) return next(err);
+        res.render('accounts/profile', { user: user });
+    });
+});
+ 
+// signup page and route
+
+router.get('/signup', (req,res, next)=>{
+    res.render('accounts/signup',{ errors: req.flash('errors') });
+});
+
+router.post('/signup', (req,res, next)=>{
+
+    async.waterfall([
+        function(callback){
+            var newUser = new User();
+
+            newUser.profile.name = req.body.name;
+            newUser.email = req.body.email;
+            newUser.password = req.body.password;
+            newUser.profile.picture = newUser.gravatar();
+        
+            User.findOne({ email: req.body.email}, (err, exixstingUser)=>{
+                if (exixstingUser) {
+                    
+                    req.flash("errors", "Account with that email already exists");
+                    return res.redirect('/signup');
+                } else {
+                    newUser.save((err, user)=>{
+                        if (err) return next(err);
+                        callback(null, newUser);
+                    })
+                }
+            });
+        },
+        function(newUser) {
+            var cart = new Cart();
+            cart.owner = newUser._id;
+            cart.save(function(err){
+                if (err) return next(err);
+                req.login(newUser, function(err){
+                    if (err) return next(err);
+                    res.redirect('/profile');
+                })
+            })
+        }
+    ])
+   
+});
+
+// logout route
+router.get('/logout', function(req, res, next){
+    req.logout();
+    res.redirect('/');
+});
+
+// Edit profileooo Routes and logic
+router.get('/edit-profile', function(req, res, next){
+    res.render('accounts/edit-profile',{ message: req.flash('success')});
+});
+
+router.post('/edit-profile', function(req, res, next){
+    User.findOne({ _id: req.user._id}, function(err, user){
+        if (err) return next(err);
+
+        if (req.body.name) user.profile.name = req.body.name;
+        if(req.body.address) user.address = req.body.address;
+
+        user.save(function(err){
+            if (err) return next(err);
+            req.flash('success', 'Successfully edited your profile');
+            return res.redirect('/edit-profile');
+        });
+    });
+});
+
+module.exports = router;
